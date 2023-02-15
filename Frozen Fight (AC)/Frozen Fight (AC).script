@@ -1,6 +1,14 @@
 // original map scripted by MaPhisto (adding random units)
 // script update with melting ice by sado
 
+{
+TODO
+- fix artifacts
+- fix all logged errors
+- test performance
+}
+
+
 const
 	MeltSourceTileType = 1;
 	MeltTargetTileType = 193; // 44 ice
