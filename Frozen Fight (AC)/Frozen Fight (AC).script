@@ -73,11 +73,11 @@ begin
 		end;
 end;
 
-procedure SadoFillOneTile(TileTypeX, TileTypeY, TileDirection: Integer; IsInsideMeltLimit: Boolean);
+procedure SadoFillOneTile(FilledTileX, FilledTileY, TileDirection: Integer; IsInsideMeltLimit: Boolean);
 begin
-	if SadoDecideForTileType(States.MapTileType(TileTypeX, TileTypeY), IsInsideMeltLimit) then
+	if SadoDecideForTileType(States.MapTileType(FilledTileX, FilledTileY), IsInsideMeltLimit) then
 		begin
-			Actions.MapTileSet(TileTypeX, TileTypeY, MeltTargetTileType, TileDirection);
+			Actions.MapTileSet(FilledTileX, FilledTileY, MeltTargetTileType, TileDirection);
 		end;
 end;
 
