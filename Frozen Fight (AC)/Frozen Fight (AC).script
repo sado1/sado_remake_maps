@@ -15,7 +15,7 @@ const
 	MeltTargetTileType = 193; // 44 ice
 	MeltTargetTileTypeTransition1 = 12; // 12 even, 23 corner, 22 big corner
 	MeltTargetTileTypeTransition2 = 4; // 12 even, 23 corner, 22 big corner
-	MeltLimit = 14;
+	MeltLimit = 13;
 	MeltInnermostLimit = 5;
 
 var
@@ -82,7 +82,8 @@ function SadoDecideForTileType(DecideSrcTileType: Integer; IsInsideMeltLimit: Bo
 begin
 	if IsInsideMeltLimit then
 		case DecideSrcTileType of
-			44, 23, 12, 22 : result := 4;
+			44 : result := 12;
+			23, 12, 22 : result := 193;
 			4, 10: result := 193;
 			// water TODO
 			193, 208, 209, 240, 244, 192, 196: result := 193;
@@ -93,14 +94,15 @@ begin
 			// iron/snow 52 small corner -> 236 corner flowing water
 			52: result := 236;
 			// snow
-			46, 203, 204, 205, 47, 220, 212, 213 : result := 4;
+			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := 4;
 			else
 				result := -1;
 		end
 	else
 		case DecideSrcTileType of
-			44, 23, 12, 22 : result := 4;
-			//4, 10: result := 193;
+			44 : result := 12;
+			23, 12, 22 : result := 193;
+			4, 10: result := -1;
 			// water TODO
 			193, 208, 209, 240, 244, 192, 196: result := 193;
 			// iron/snow even 166 -> 210 water flowing to top
@@ -110,36 +112,42 @@ begin
 			// iron/snow 52 small corner -> 236 corner flowing water
 			52: result := 236;
 			// snow
-			//46, 203, 204, 205, 47, 220, 212, 213 : result := 0;
+			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := -1;
 			else
 				result := -1;
 		end;
 end;
 
 procedure SadoFillOneTile(TileDirection, FilledTileX, FilledTileY, PreviousFilledTileXModifier, PreviousFilledTileYModifier: Integer; IsInsideMeltLimit: Boolean);
-var result1, result2, result3: Integer;
+var result1, result2, result3, tileType1, tileType2, tileType3: Integer;
 begin
-	
-	result1 := SadoDecideForTileType(States.MapTileType(FilledTileX, FilledTileY), IsInsideMeltLimit);
-	if result1 <> -1 then
+	tileType1 := States.MapTileType(FilledTileX, FilledTileY);
+	result1 := SadoDecideForTileType(tileType1, IsInsideMeltLimit);
+	if (result1 <> -1) then
 	begin
 		if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
 			Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
-		result2 := SadoDecideForTileType(States.MapTileType(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2), IsInsideMeltLimit);
-		if (result2 = 10) or (result2 = 4) then
+		
+		{ tileType3 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2);
+		result3 := SadoDecideForTileType(tileType3, IsInsideMeltLimit);
+		if (result3 = 10) or (result3 = 4) then
 		begin
 			//TileDirection := (TileDirection + 2) mod 4;
 			// TODO use IsInsideMeltLimit and decide to fill with water, snow/ice even transition, or leave it alone, when in smallest circle
-			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, result2, TileDirection);
-		end;
-		result3 := SadoDecideForTileType(States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier), IsInsideMeltLimit);
-		if result3 > 0 then
+			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, result3, TileDirection);
+		end; }
+		
+		tileType2 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier);
+		result2 := SadoDecideForTileType(tileType2, IsInsideMeltLimit);
+		if ((result2 <> 23) and (result2 <> 12) and (result2 <> 22) and (result1 <> 10) and (result1 <> 4)) then
 		begin
-			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier, result3, States.MapTileRotation(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier));
+			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier, result2, States.MapTileRotation(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier));
 		end;
-		if (result1 <> 10) and (result1 <> 4) then
-			TileDirection := (States.MapTileRotation(FilledTileX, FilledTileY) + 2) mod 4;
-		Actions.MapTileSet(FilledTileX, FilledTileY, result1, (TileDirection + 2) mod 4);
+		
+		if (result1 <> 23) and (result1 <> 12) and (result1 <> 22) then
+			TileDirection := States.MapTileRotation(FilledTileX, FilledTileY);
+
+		Actions.MapTileSet(FilledTileX, FilledTileY, result1, TileDirection);
 	end;
 end;
 
@@ -173,10 +181,7 @@ begin
 	ThunderAddRandomTroops;
 	MeltCurrentModifier := 0;
 	MeltModifier := round((States.MapHeight + Abs(States.MapHeight - States.MapWidth) ) div 2);
-	DirI := 0+(States.KamRandomI(3));
-	DirII := 0+(States.KamRandomI(3));
-	DirIII := 0+(States.KamRandomI(3));
-	DirIV := 0+(States.KamRandomI(3));
+
 	// list of tiles which we want to replace
 	//TileTypesList := tileTypesListType.Create(1,2,3);
 	// MeltCurrentModifier := -1 * round((States.MapHeight + Abs(States.MapHeight - States.MapWidth) ) div 2);
@@ -185,6 +190,6 @@ end;
 
 procedure OnTick;
 begin
-	if (States.GameTime mod 3 = 0) then
+	if (States.GameTime mod 2 = 0) then
 		SadoMeltMap;
 end;
