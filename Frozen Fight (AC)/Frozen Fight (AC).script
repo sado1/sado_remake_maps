@@ -22,7 +22,6 @@ var
 	X: array [0..3] of Integer;
 	Y: array [0..3] of Integer;
 	MeltCurrentModifier, MeltModifier: Integer;
-	DirI, DirII, DirIII, DirIV: Integer;
 	DecideIfIsInsideMeltLimit, AreWeInX: Boolean;
 
 
@@ -119,35 +118,40 @@ begin
 end;
 
 procedure SadoFillOneTile(TileDirection, FilledTileX, FilledTileY, PreviousFilledTileXModifier, PreviousFilledTileYModifier: Integer; IsInsideMeltLimit: Boolean);
-var result1, result2, result3, tileType1, tileType2, tileType3: Integer;
+var result1, result2, tileType1, tileType2: Integer;
 begin
-	tileType1 := States.MapTileType(FilledTileX, FilledTileY);
-	result1 := SadoDecideForTileType(tileType1, IsInsideMeltLimit);
-	if (result1 <> -1) then
+	if ( (FilledTileX > 0) and (FilledTileY > 0) and (FilledTileX < States.MapWidth) and (FilledTileY < States.MapHeight)) then
 	begin
-		if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
-			Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
-		
-		{ tileType3 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2);
-		result3 := SadoDecideForTileType(tileType3, IsInsideMeltLimit);
-		if (result3 = 10) or (result3 = 4) then
+		tileType1 := States.MapTileType(FilledTileX, FilledTileY);
+		result1 := SadoDecideForTileType(tileType1, IsInsideMeltLimit);
+		if (result1 <> -1) then
 		begin
-			//TileDirection := (TileDirection + 2) mod 4;
-			// TODO use IsInsideMeltLimit and decide to fill with water, snow/ice even transition, or leave it alone, when in smallest circle
-			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, result3, TileDirection);
-		end; }
-		
-		tileType2 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier);
-		result2 := SadoDecideForTileType(tileType2, IsInsideMeltLimit);
-		if ((result2 <> 23) and (result2 <> 12) and (result2 <> 22) and (result1 <> 10) and (result1 <> 4)) then
-		begin
-			Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier, result2, States.MapTileRotation(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier));
-		end;
-		
-		if (result1 <> 23) and (result1 <> 12) and (result1 <> 22) then
-			TileDirection := States.MapTileRotation(FilledTileX, FilledTileY);
+			if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
+				Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
+			
+			{ tileType3 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2);
+			result3 := SadoDecideForTileType(tileType3, IsInsideMeltLimit);
+			if (result3 = 10) or (result3 = 4) then
+			begin
+				//TileDirection := (TileDirection + 2) mod 4;
+				// TODO use IsInsideMeltLimit and decide to fill with water, snow/ice even transition, or leave it alone, when in smallest circle
+				Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, result3, TileDirection);
+			end; }
+			if ( ( (FilledTileX + PreviousFilledTileXModifier) > 0) and ( (FilledTileY + PreviousFilledTileYModifier) > 0) and ((FilledTileX + PreviousFilledTileXModifier) < States.MapWidth) and ((FilledTileY + PreviousFilledTileYModifier) < States.MapHeight)) then
+			begin
+				tileType2 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier);
+				result2 := SadoDecideForTileType(tileType2, IsInsideMeltLimit);
+				if ((result2 <> -1) and (result2 <> 23) and (result2 <> 12) and (result2 <> 22) and (result1 <> 10) and (result1 <> 4)) then
+				begin
+					Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier, result2, States.MapTileRotation(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier));
+				end;
+			end;
+			
+			if (result1 <> 23) and (result1 <> 12) and (result1 <> 22) then
+				TileDirection := States.MapTileRotation(FilledTileX, FilledTileY);
 
-		Actions.MapTileSet(FilledTileX, FilledTileY, result1, TileDirection);
+			Actions.MapTileSet(FilledTileX, FilledTileY, result1, TileDirection);
+		end;
 	end;
 end;
 
@@ -159,7 +163,7 @@ begin;
 		DecideIfIsInsideMeltLimit := (MeltCurrentModifier < (MeltModifier - MeltLimit) );
 		MeltCurrentModifier := MeltCurrentModifier + 1;
 		AreWeInX := False;
-		for MeltX := 1 to States.MapWidth do // todo (MeltModifier - MeltLimit) here
+		for MeltX := 1 to States.MapWidth - 1 do // todo (MeltModifier - MeltLimit) here
 		begin
 			SadoFillOneTile(2, MeltX, MeltCurrentModifier, 0, -1, DecideIfIsInsideMeltLimit);
 			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier, 0, 1, DecideIfIsInsideMeltLimit);
