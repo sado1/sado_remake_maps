@@ -3,18 +3,12 @@
 
 {
 TODO
-- fix workflow of filling with snow/ice transition in the inner circle
-- fix case, when two troops in a row mean artifacts of ice on water surface
-- fix all logged errors
-- test performance
+- fix workflow of filling with snow/ice transition in the inner circle - currently I do not know how to do this properly with my method
+- fix case, when two troops in a row mean artifacts of ice on water surface - for now ignored
+- performance tweaks ie. spreading this throughout ticks, could be nice
 }
 
-
 const
-	MeltSourceTileType = 1;
-	MeltTargetTileType = 193; // 44 ice
-	MeltTargetTileTypeTransition1 = 12; // 12 even, 23 corner, 22 big corner
-	MeltTargetTileTypeTransition2 = 4; // 12 even, 23 corner, 22 big corner
 	MeltLimit = 13;
 	MeltInnermostLimit = 5;
 
@@ -23,7 +17,6 @@ var
 	Y: array [0..3] of Integer;
 	MeltCurrentModifier, MeltModifier: Integer;
 	DecideIfIsInsideMeltLimit, AreWeInX: Boolean;
-
 
 procedure ThunderAddRandomTroops;
 var P,a,b,c,d,e: Integer;
@@ -67,14 +60,10 @@ end;
 
 
 {
-	MeltTargetTileType = 193;           // water
-	MeltTargetTileTypeTransition1 = 12; // ice water even 
-	MeltTargetTileTypeTransition2 = 4;  // ice snow even
 	water 193
 	ice: 44
 	ice -> water: 12 even, 23 corner, 22 big corner
 	ice -> snow: 4 even, 10 corner
-	
 }
 
 function SadoDecideForTileType(DecideSrcTileType: Integer; IsInsideMeltLimit: Boolean) : Integer;
@@ -128,15 +117,7 @@ begin
 		begin
 			if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
 				Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
-			
-			{ tileType3 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2);
-			result3 := SadoDecideForTileType(tileType3, IsInsideMeltLimit);
-			if (result3 = 10) or (result3 = 4) then
-			begin
-				//TileDirection := (TileDirection + 2) mod 4;
-				// TODO use IsInsideMeltLimit and decide to fill with water, snow/ice even transition, or leave it alone, when in smallest circle
-				Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, result3, TileDirection);
-			end; }
+
 			if ( ( (FilledTileX + PreviousFilledTileXModifier) > 0) and ( (FilledTileY + PreviousFilledTileYModifier) > 0) and ((FilledTileX + PreviousFilledTileXModifier) < States.MapWidth) and ((FilledTileY + PreviousFilledTileYModifier) < States.MapHeight)) then
 			begin
 				tileType2 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier);
@@ -176,8 +157,6 @@ begin;
 			AreWeInX := False;
 		end;
 	end;
-	// TODO rotation 0-3 random
-
 end;
 
 procedure OnMissionStart;
@@ -185,10 +164,6 @@ begin
 	ThunderAddRandomTroops;
 	MeltCurrentModifier := 0;
 	MeltModifier := round((States.MapHeight + Abs(States.MapHeight - States.MapWidth) ) div 2);
-
-	// list of tiles which we want to replace
-	//TileTypesList := tileTypesListType.Create(1,2,3);
-	// MeltCurrentModifier := -1 * round((States.MapHeight + Abs(States.MapHeight - States.MapWidth) ) div 2);
 end;
 
 
