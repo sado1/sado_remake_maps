@@ -169,6 +169,6 @@ end;
 
 procedure OnTick;
 begin
-	if (States.GameTime mod 2 = 0) then
+	if ((States.GameTime > 600) and (States.GameTime mod 51 = 0)) then
 		SadoMeltMap;
 end;
