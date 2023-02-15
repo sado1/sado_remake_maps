@@ -4,6 +4,8 @@
 const
 	MeltSourceTileType = 1;
 	MeltTargetTileType = 193; // 44 ice
+	MeltTargetTileTypeTransition1 = 12; // 12 even, 23 corner, 22 big corner
+	MeltTargetTileTypeTransition2 = 4; // 12 even, 23 corner, 22 big corner
 	MeltLimit = 14;
 	MeltInnermostLimit = 5;
 
@@ -12,7 +14,7 @@ var
 	Y: array [0..3] of Integer;
 	MeltCurrentModifier, MeltModifier: Integer;
 	DirI, DirII, DirIII, DirIV: Integer;
-	DecideIfIsInsideMeltLimit: Boolean;
+	DecideIfIsInsideMeltLimit, AreWeInX: Boolean;
 
 
 procedure ThunderAddRandomTroops;
@@ -73,12 +75,16 @@ begin
 		end;
 end;
 
-procedure SadoFillOneTile(FilledTileX, FilledTileY, TileDirection: Integer; IsInsideMeltLimit: Boolean);
+procedure SadoFillOneTile(TileDirection, FilledTileX, FilledTileY, PreviousFilledTileXModifier, PreviousFilledTileYModifier: Integer; IsInsideMeltLimit: Boolean);
 begin
 	if SadoDecideForTileType(States.MapTileType(FilledTileX, FilledTileY), IsInsideMeltLimit) then
-		begin
-			Actions.MapTileSet(FilledTileX, FilledTileY, MeltTargetTileType, TileDirection);
-		end;
+	begin
+		if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
+			Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
+		Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier*2, FilledTileY + PreviousFilledTileYModifier*2, MeltTargetTileType, TileDirection);
+		Actions.MapTileSet(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier, MeltTargetTileTypeTransition1, TileDirection);
+		Actions.MapTileSet(FilledTileX, FilledTileY, MeltTargetTileTypeTransition2, (TileDirection + 2) mod 4);
+	end;
 end;
 
 procedure SadoMeltMap;
@@ -91,15 +97,18 @@ begin;
 	begin
 		DecideIfIsInsideMeltLimit := (MeltCurrentModifier < (MeltModifier - MeltLimit) );
 		MeltCurrentModifier := MeltCurrentModifier + 1;
-		for MeltX := 0 to States.MapWidth do // todo (MeltModifier - MeltLimit) here
+		AreWeInX := False;
+		for MeltX := 1 to States.MapWidth do // todo (MeltModifier - MeltLimit) here
 		begin
-			SadoFillOneTile(MeltX, MeltCurrentModifier, DirI, DecideIfIsInsideMeltLimit);
-			SadoFillOneTile(MeltX, States.MapHeight - MeltCurrentModifier, DirI, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(2, MeltX, MeltCurrentModifier, 0, -1, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier, 0, 1, DecideIfIsInsideMeltLimit);
+			AreWeInX := True;
 		end;
-		for MeltY := 0 to States.MapHeight do
+		for MeltY := MeltCurrentModifier to States.MapHeight - MeltCurrentModifier do
 		begin
-			SadoFillOneTile(MeltCurrentModifier, MeltY, DirI, DecideIfIsInsideMeltLimit);
-			SadoFillOneTile(States.MapWidth - MeltCurrentModifier, MeltY, DirI, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(1, MeltCurrentModifier, MeltY, -1, 0, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(3, States.MapWidth - MeltCurrentModifier, MeltY, 1, 0, DecideIfIsInsideMeltLimit);
+			AreWeInX := False;
 		end;
 	end;
 	// TODO rotation 0-3 random
