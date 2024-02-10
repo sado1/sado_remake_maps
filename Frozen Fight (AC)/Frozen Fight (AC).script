@@ -3,14 +3,13 @@
 
 {
 TODO
-- fix workflow of filling with snow/ice transition in the inner circle - currently I do not know how to do this properly with my method
 - fix case, when two troops in a row mean artifacts of ice on water surface - for now ignored
 - performance tweaks ie. spreading this throughout ticks, could be nice
 }
 
 const
 	MeltLimit = 13;
-	MeltInnermostLimit = 5;
+	MeltInnermostLimit = 8;
 
 var
 	X: array [0..3] of Integer;
