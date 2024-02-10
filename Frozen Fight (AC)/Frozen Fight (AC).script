@@ -1,5 +1,6 @@
 // original map scripted by MaPhisto (adding random units)
 // script update with melting ice by sado
+// feel free to use this in other maps... if you know how ;)
 
 {
 TODO
@@ -135,6 +136,27 @@ begin
 	end;
 end;
 
+procedure SadoKillMarauders;
+var P, UnitNr, UnitID, UnitX, UnitY: Integer;
+var AllUnits: array of Integer;
+begin
+  for P := 0 to States.StatPlayerCount() - 1 do
+  begin
+    AllUnits := States.PlayerGetAllUnits(P);
+    for UnitNr := 0 to Length(AllUnits)-1 do
+    begin
+      UnitID := AllUnits[UnitNr];
+      UnitX :=  States.UnitPositionX(UnitID);
+      UnitY := States.UnitPositionY(UnitID);
+      if ( (UnitX < MeltCurrentModifier) 
+          or (UnitX > States.MapWidth - MeltCurrentModifier)
+          or (UnitY < MeltCurrentModifier) 
+          or (UnitY > States.MapHeight - MeltCurrentModifier) ) then
+            Actions.UnitKill(UnitID, True);
+    end;
+  end;
+end;
+
 procedure SadoMeltMap;
 var MeltX, MeltY: Integer;
 begin;
@@ -145,7 +167,8 @@ begin;
 		AreWeInX := False;
 		for MeltX := 1 to States.MapWidth - 1 do // todo (MeltModifier - MeltLimit) here
 		begin
-			SadoFillOneTile(2, MeltX, MeltCurrentModifier, 0, -1, DecideIfIsInsideMeltLimit);
+			// first try to melt
+                        SadoFillOneTile(2, MeltX, MeltCurrentModifier, 0, -1, DecideIfIsInsideMeltLimit);
 			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier, 0, 1, DecideIfIsInsideMeltLimit);
 			AreWeInX := True;
 		end;
@@ -155,6 +178,7 @@ begin;
 			SadoFillOneTile(3, States.MapWidth - MeltCurrentModifier, MeltY, 1, 0, DecideIfIsInsideMeltLimit);
 			AreWeInX := False;
 		end;
+        SadoKillMarauders;
 	end;
 end;
 
