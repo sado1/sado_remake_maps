@@ -201,7 +201,7 @@ MeltInnermostLimit - smaller limit (closer to the center)
 
 }
 	// stop the flood, once we are in distance of MeltInnermostLimit from the edge of the map
-	if (MeltCurrentModifier < (MeltCurrentModifier - MeltInnermostLimit) ) then
+	if (MeltCurrentModifier < (MeltModifier - MeltInnermostLimit) ) then
 	begin
 		// true, if we did not cross border - higher limit
 		// TODO why needed?
