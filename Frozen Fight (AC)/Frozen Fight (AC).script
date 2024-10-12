@@ -4,9 +4,9 @@
 
 {
 TODO
-- fix tile rotation for grassy desert tile type
-- add object removal
 - fix case, when two troops in a row mean artifacts of ice on water surface - for now ignored
+It happens when troops will move diagonally, after they change formation, when their colleague dies
+so it has to be related to only looking towards one direction, when flood happens (ie. from left to right, but never +1/-1 tile near)
 - performance tweaks ie. spreading this throughout ticks, could be nice
 }
 
