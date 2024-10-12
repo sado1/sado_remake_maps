@@ -5,6 +5,7 @@
 {
 TODO
 - performance tweaks ie. spreading this throughout ticks, could be nice
+ie. try to make different loops for map updates for each of 4 directions
 }
 
 const
@@ -162,7 +163,6 @@ var AllUnits: array of Integer;
 begin
   for P := 0 to States.StatPlayerCount() - 1 do
   begin
-    Actions.Log('Start logging units');
     if States.PlayerEnabled(P) then
     begin
       AllUnits := States.PlayerGetAllUnits(P);
@@ -177,12 +177,9 @@ begin
             or (UnitY > States.MapHeight - MeltCurrentModifier[whichRun]) ) then
             begin
               Actions.UnitKill(UnitID, True);
-            end
-            else
-              Actions.Log('UnitID: ' + IntToStr(UnitID) + ' Coords: [' + IntToStr(UnitX) + ',' + IntToStr(UnitY) + ']');
+            end;
       end;
     end;
-    Actions.Log('Stop logging units');
   end;
 end;
 
