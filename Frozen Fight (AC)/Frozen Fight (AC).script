@@ -4,6 +4,8 @@
 
 {
 TODO
+- minor: border at the start of the game gets distorted - need to check offset and do not launch the loop for first few iterations
+- minor: similar issue with borders, after first and second run finishes
 - performance tweaks ie. spreading this throughout ticks, could be nice
 ie. try to make different loops for map updates for each of 4 directions
 }
