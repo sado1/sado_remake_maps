@@ -13,6 +13,7 @@ TODO
 const
 	MeltLimit = 13; // 31
 	MeltInnermostLimit = 8; // 26
+	TimeOfStart = 1; // 600
 
 var
 	X: array [0..3] of Integer;
@@ -73,7 +74,7 @@ begin
 	if IsInsideMeltLimit then
 		case DecideSrcTileType of
 			44 : result := 12;
-			23, 12, 22 : result := 193;
+			23, 12, 22 : result := 193; // remember to add every similar tile type in change tiledirection!
 			4, 10: result := 193;
 			// water TODO
 			193, 208, 209, 240, 244, 192, 196: result := 193;
@@ -99,7 +100,7 @@ begin
 	else
 		case DecideSrcTileType of
 			44 : result := 12;
-			23, 12, 22 : result := 193;
+			23, 12, 22 : result := 193; 
 			4, 10: result := -1;
 			// water TODO
 			193, 208, 209, 240, 244, 192, 196: result := 193;
@@ -127,6 +128,8 @@ end;
 procedure SadoFillOneTile(TileDirection, FilledTileX, FilledTileY, PreviousFilledTileXModifier, PreviousFilledTileYModifier: Integer; IsInsideMeltLimit: Boolean);
 var result1, result2, tileType1, tileType2: Integer;
 begin
+	if (States.MapTileObject(FilledTileX, FilledTileY) <> 255) then
+                Actions.MapTileObjectSet(FilledTileX, FilledTileY, 255);
 	if ( (FilledTileX > 0) and (FilledTileY > 0) and (FilledTileX < States.MapWidth) and (FilledTileY < States.MapHeight)) then
 	begin
 		tileType1 := States.MapTileType(FilledTileX, FilledTileY);
@@ -135,7 +138,7 @@ begin
 		begin
 			if (States.UnitAt(FilledTileX, FilledTileY) <> -1) then
 				Actions.UnitKill(States.UnitAt(FilledTileX, FilledTileY), True);
-
+			
 			if ( ( (FilledTileX + PreviousFilledTileXModifier) > 0) and ( (FilledTileY + PreviousFilledTileYModifier) > 0) and ((FilledTileX + PreviousFilledTileXModifier) < States.MapWidth) and ((FilledTileY + PreviousFilledTileYModifier) < States.MapHeight)) then
 			begin
 				tileType2 := States.MapTileType(FilledTileX + PreviousFilledTileXModifier, FilledTileY + PreviousFilledTileYModifier);
@@ -146,7 +149,7 @@ begin
 				end;
 			end;
 			
-			if (result1 <> 23) and (result1 <> 12) and (result1 <> 22) then
+			if (result1 <> 23) and (result1 <> 12) and (result1 <> 22) and (result1 <> 241) and (result1 <> 242) and (result1 <> 243) then
 				TileDirection := States.MapTileRotation(FilledTileX, FilledTileY);
 
 			Actions.MapTileSet(FilledTileX, FilledTileY, result1, TileDirection);
@@ -160,29 +163,52 @@ var AllUnits: array of Integer;
 begin
   for P := 0 to States.StatPlayerCount() - 1 do
   begin
-    AllUnits := States.PlayerGetAllUnits(P);
-    for UnitNr := 0 to Length(AllUnits)-1 do
+    Actions.Log('Start logging units');
+    if States.PlayerEnabled(P) then
     begin
-      UnitID := AllUnits[UnitNr];
-      UnitX :=  States.UnitPositionX(UnitID);
-      UnitY := States.UnitPositionY(UnitID);
-      if ( (UnitX < MeltCurrentModifier) 
-          or (UnitX > States.MapWidth - MeltCurrentModifier)
-          or (UnitY < MeltCurrentModifier) 
-          or (UnitY > States.MapHeight - MeltCurrentModifier) ) then
-            Actions.UnitKill(UnitID, True);
+      AllUnits := States.PlayerGetAllUnits(P);
+      for UnitNr := 0 to Length(AllUnits)-1 do
+      begin
+        UnitID := AllUnits[UnitNr];
+        UnitX :=  States.UnitPositionX(UnitID);
+        UnitY := States.UnitPositionY(UnitID);
+        if ( (UnitX < MeltCurrentModifier) 
+            or (UnitX > States.MapWidth - MeltCurrentModifier)
+            or (UnitY < MeltCurrentModifier) 
+            or (UnitY > States.MapHeight - MeltCurrentModifier) ) then
+            begin
+              Actions.UnitKill(UnitID, True);
+            end
+            else
+              Actions.Log('UnitID: ' + IntToStr(UnitID) + ' Coords: [' + IntToStr(UnitX) + ',' + IntToStr(UnitY) + ']');
+      end;
     end;
+    Actions.Log('Stop logging units');
   end;
 end;
 
 procedure SadoMeltMap;
 var MeltX, MeltY: Integer;
 begin;
-	if (MeltCurrentModifier < (MeltModifier - MeltInnermostLimit) ) then
+{
+MeltCurrentModifier - value gets +1 in every iteration 
+MeltModifier - average of map height and width.
+ Helps to figure out a diagonal border.
+ Border separates 4 directions of flood (from top, right, bottom and left).
+MeltLimit - bigger limit
+MeltInnermostLimit - smaller limit (closer to the center)
+
+
+}
+	// stop the flood, once we are in distance of MeltInnermostLimit from the edge of the map
+	if (MeltCurrentModifier < (MeltCurrentModifier - MeltInnermostLimit) ) then
 	begin
+		// true, if we did not cross border - higher limit
+		// TODO why needed?
 		DecideIfIsInsideMeltLimit := (MeltCurrentModifier < (MeltModifier - MeltLimit) );
 		MeltCurrentModifier := MeltCurrentModifier + 1;
 		AreWeInX := False;
+		// X melt cycle (from left and right)
 		for MeltX := 1 to States.MapWidth - 1 do // todo (MeltModifier - MeltLimit) here
 		begin
 			// first try to melt
@@ -190,6 +216,7 @@ begin;
 			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier, 0, 1, DecideIfIsInsideMeltLimit);
 			AreWeInX := True;
 		end;
+		// Y melt cycle (from top and bottom)
 		for MeltY := MeltCurrentModifier to States.MapHeight - MeltCurrentModifier do
 		begin
 			SadoFillOneTile(1, MeltCurrentModifier, MeltY, -1, 0, DecideIfIsInsideMeltLimit);
@@ -210,6 +237,6 @@ end;
 
 procedure OnTick;
 begin
-	if ((States.GameTime > 600) and (States.GameTime mod 51 = 0)) then
+	if ((States.GameTime > TimeOfStart) and (States.GameTime mod 51 = 0)) then
 		SadoMeltMap;
 end;
