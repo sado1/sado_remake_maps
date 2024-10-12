@@ -4,9 +4,6 @@
 
 {
 TODO
-- fix case, when two troops in a row mean artifacts of ice on water surface - for now ignored
-It happens when troops will move diagonally, after they change formation, when their colleague dies
-so it has to be related to only looking towards one direction, when flood happens (ie. from left to right, but never +1/-1 tile near)
 - performance tweaks ie. spreading this throughout ticks, could be nice
 }
 
@@ -14,11 +11,13 @@ const
 	MeltLimit = 13; // 31
 	MeltInnermostLimit = 8; // 26
 	TimeOfStart = 1; // 600
+        SecondRunOffset = 50;
 
 var
 	X: array [0..3] of Integer;
 	Y: array [0..3] of Integer;
-	MeltCurrentModifier, MeltModifier: Integer;
+	MeltModifier: Integer;
+	MeltCurrentModifier: array [0..1] of Integer;
 	DecideIfIsInsideMeltLimit, AreWeInX: Boolean;
 
 procedure ThunderAddRandomTroops;
@@ -157,7 +156,7 @@ begin
 	end;
 end;
 
-procedure SadoKillMarauders;
+procedure SadoKillMarauders(whichRun: Integer);
 var P, UnitNr, UnitID, UnitX, UnitY: Integer;
 var AllUnits: array of Integer;
 begin
@@ -172,10 +171,10 @@ begin
         UnitID := AllUnits[UnitNr];
         UnitX :=  States.UnitPositionX(UnitID);
         UnitY := States.UnitPositionY(UnitID);
-        if ( (UnitX < MeltCurrentModifier) 
-            or (UnitX > States.MapWidth - MeltCurrentModifier)
-            or (UnitY < MeltCurrentModifier) 
-            or (UnitY > States.MapHeight - MeltCurrentModifier) ) then
+        if ( (UnitX < MeltCurrentModifier[whichRun]) 
+            or (UnitX > States.MapWidth - MeltCurrentModifier[whichRun])
+            or (UnitY < MeltCurrentModifier[whichRun]) 
+            or (UnitY > States.MapHeight - MeltCurrentModifier[whichRun]) ) then
             begin
               Actions.UnitKill(UnitID, True);
             end
@@ -187,11 +186,14 @@ begin
   end;
 end;
 
-procedure SadoMeltMap;
-var MeltX, MeltY: Integer;
+procedure SadoMeltMap(offset: Integer; whichRun: Integer);
+var MeltX, MeltY, offsetTmp: Integer;
 begin;
 {
-MeltCurrentModifier - value gets +1 in every iteration 
+MeltCurrentModifier[whichRun] - value gets +1 in every iteration 
+ There are 2 arrays, because we need a second try, to remove remaining ground, after troops which had to be killed off using SadoKillMarauders procedure...
+ Issue is related to troops walking diagonally, when their colleague gets killed
+ offset - it makes the second try start a few tiles earlier, in order to go over yet undeleted tiles in the water
 MeltModifier - average of map height and width.
  Helps to figure out a diagonal border.
  Border separates 4 directions of flood (from top, right, bottom and left).
@@ -200,43 +202,59 @@ MeltInnermostLimit - smaller limit (closer to the center)
 
 
 }
-	// stop the flood, once we are in distance of MeltInnermostLimit from the edge of the map
-	if (MeltCurrentModifier < (MeltModifier - MeltInnermostLimit) ) then
+	offsetTmp := offset;
+	
+	if (MeltCurrentModifier[whichRun] = offsetTmp) then
+	begin
+	  MeltCurrentModifier[whichRun] := 0;
+	  offsetTmp := -1;
+        end;
+        // stop the flood, once we are in distance of MeltInnermostLimit from the edge of the map
+	if (MeltCurrentModifier[whichRun] < (MeltModifier - MeltInnermostLimit) ) then
 	begin
 		// true, if we did not cross border - higher limit
 		// TODO why needed?
-		DecideIfIsInsideMeltLimit := (MeltCurrentModifier < (MeltModifier - MeltLimit) );
-		MeltCurrentModifier := MeltCurrentModifier + 1;
+		DecideIfIsInsideMeltLimit := (MeltCurrentModifier[whichRun] < (MeltModifier - MeltLimit) );
+		MeltCurrentModifier[whichRun] := MeltCurrentModifier[whichRun] + 1;
 		AreWeInX := False;
 		// X melt cycle (from left and right)
 		for MeltX := 1 to States.MapWidth - 1 do // todo (MeltModifier - MeltLimit) here
 		begin
 			// first try to melt
-                        SadoFillOneTile(2, MeltX, MeltCurrentModifier, 0, -1, DecideIfIsInsideMeltLimit);
-			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier, 0, 1, DecideIfIsInsideMeltLimit);
+                        SadoFillOneTile(2, MeltX, MeltCurrentModifier[whichRun], 0, -1, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(0, MeltX, States.MapHeight - MeltCurrentModifier[whichRun], 0, 1, DecideIfIsInsideMeltLimit);
 			AreWeInX := True;
 		end;
 		// Y melt cycle (from top and bottom)
-		for MeltY := MeltCurrentModifier to States.MapHeight - MeltCurrentModifier do
+		for MeltY := MeltCurrentModifier[whichRun] to States.MapHeight - MeltCurrentModifier[whichRun] do
 		begin
-			SadoFillOneTile(1, MeltCurrentModifier, MeltY, -1, 0, DecideIfIsInsideMeltLimit);
-			SadoFillOneTile(3, States.MapWidth - MeltCurrentModifier, MeltY, 1, 0, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(1, MeltCurrentModifier[whichRun], MeltY, -1, 0, DecideIfIsInsideMeltLimit);
+			SadoFillOneTile(3, States.MapWidth - MeltCurrentModifier[whichRun], MeltY, 1, 0, DecideIfIsInsideMeltLimit);
 			AreWeInX := False;
 		end;
-        SadoKillMarauders;
-	end;
+	    // SadoKillMarauders;
+        end;
+        
 end;
 
 procedure OnMissionStart;
 begin
 	ThunderAddRandomTroops;
-	MeltCurrentModifier := 0;
+	MeltCurrentModifier[0] := 0;
+	MeltCurrentModifier[1] := 0;
 	MeltModifier := round((States.MapHeight + Abs(States.MapHeight - States.MapWidth) ) div 2);
 end;
 
 
 procedure OnTick;
 begin
-	if ((States.GameTime > TimeOfStart) and (States.GameTime mod 51 = 0)) then
-		SadoMeltMap;
+	if (States.GameTime > TimeOfStart) then
+	begin
+	  if (States.GameTime mod 51 = 0) then
+		  SadoMeltMap(0, 0);
+	  if (States.GameTime mod 57 = 0) then
+	          SadoKillMarauders(0);
+	  if (States.GameTime mod 61 = 0) then
+	          SadoMeltMap(SecondRunOffset, 1);
+	end;
 end;
