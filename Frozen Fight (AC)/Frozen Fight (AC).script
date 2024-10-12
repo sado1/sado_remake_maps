@@ -4,13 +4,15 @@
 
 {
 TODO
+- fix tile rotation for grassy desert tile type
+- add object removal
 - fix case, when two troops in a row mean artifacts of ice on water surface - for now ignored
 - performance tweaks ie. spreading this throughout ticks, could be nice
 }
 
 const
-	MeltLimit = 13;
-	MeltInnermostLimit = 8;
+	MeltLimit = 13; // 31
+	MeltInnermostLimit = 8; // 26
 
 var
 	X: array [0..3] of Integer;
@@ -83,6 +85,14 @@ begin
 			52: result := 236;
 			// snow
 			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := 4;
+			
+			// grassy desert
+			26, 27: result := 242;
+			75, 76, 77 : result := 4;
+			// 241 gd-w corner
+			// 242 gd-w 50% 
+			// 243 gd-w reverse corner (xD)
+			241, 242, 243 : result := 193;
 			else
 				result := -1;
 		end
@@ -101,6 +111,14 @@ begin
 			52: result := 236;
 			// snow
 			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := -1;
+			
+			// grassy desert
+			26, 27: result := 242;
+			75, 76, 77 : result := -1;
+			// 241 gd-w corner
+			// 242 gd-w 50% 
+			// 243 gd-w reverse corner (xD)
+			241, 242, 243 : result := 193;
 			else
 				result := -1;
 		end;
