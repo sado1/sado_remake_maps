@@ -4,17 +4,15 @@
 
 {
 TODO
-- minor: border at the start of the game gets distorted - need to check offset and do not launch the loop for first few iterations
-- minor: similar issue with borders, after first and second run finishes
 - performance tweaks ie. spreading this throughout ticks, could be nice
 ie. try to make different loops for map updates for each of 4 directions
 }
 
 const
-	MeltLimit = 13; // 31
-	MeltInnermostLimit = 8; // 26
-	TimeOfStart = 1; // 600
-        SecondRunOffset = 50;
+	MeltLimit = 28; // 31 / 13
+	MeltInnermostLimit = 23; // 26 / 8
+	TimeOfStart = 600; // default 1m
+        SecondRunOffset = 50; // default 5s
 
 var
 	X: array [0..3] of Integer;
@@ -214,7 +212,8 @@ MeltInnermostLimit - smaller limit (closer to the center)
 		// true, if we did not cross border - higher limit
 		// TODO why needed?
 		DecideIfIsInsideMeltLimit := (MeltCurrentModifier[whichRun] < (MeltModifier - MeltLimit) );
-		MeltCurrentModifier[whichRun] := MeltCurrentModifier[whichRun] + 1;
+		if (offsetTmp <= 0) then 
+		  MeltCurrentModifier[whichRun] := MeltCurrentModifier[whichRun] + 1;
 		AreWeInX := False;
 		// X melt cycle (from left and right)
 		for MeltX := 1 to States.MapWidth - 1 do // todo (MeltModifier - MeltLimit) here
@@ -249,11 +248,11 @@ procedure OnTick;
 begin
 	if (States.GameTime > TimeOfStart) then
 	begin
-	  if (States.GameTime mod 51 = 0) then
+	  if (States.GameTime mod 151 = 0) then
 		  SadoMeltMap(0, 0);
-	  if (States.GameTime mod 57 = 0) then
+	  if (States.GameTime mod 157 = 0) then
 	          SadoKillMarauders(0);
-	  if (States.GameTime mod 61 = 0) then
+	  if (States.GameTime mod 163 = 0) then
 	          SadoMeltMap(SecondRunOffset, 1);
 	end;
 end;
