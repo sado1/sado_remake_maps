@@ -6,11 +6,12 @@
 TODO
 - performance tweaks ie. spreading this throughout ticks, could be nice
 ie. try to make different loops for map updates for each of 4 directions
+- restore original unit placements from comment 
 }
 
 const
-	MeltLimit = 28; // 31 / 13
-	MeltInnermostLimit = 23; // 26 / 8
+	MeltLimit = 27; // 31 / 13
+	MeltInnermostLimit = 22; // 26 / 8
 	TimeOfStart = 600; // default 1m
         SecondRunOffset = 50; // default 5s
 
@@ -24,15 +25,24 @@ var
 procedure ThunderAddRandomTroops;
 var P,a,b,c,d,e: Integer;
 begin
-	X[0]:= 47;
-	Y[0]:= 10;
-	X[1]:= 88;
-	Y[1]:= 48;
-	X[2]:= 50;
-	Y[2]:= 86;
-	X[3]:= 7;
-	Y[3]:= 48;
-
+	X[0]:= 17;
+	Y[0]:= 15;
+	X[1]:= 80;
+	Y[1]:= 15;
+	X[2]:= 80;
+	Y[2]:= 80;
+	X[3]:= 14;
+	Y[3]:= 83;
+{ VALUES for Frozen Fight map
+       X[0]:= 47;
+       Y[0]:= 10;
+       X[1]:= 88;
+       Y[1]:= 48;
+       X[2]:= 50;
+       Y[2]:= 86;
+       X[3]:= 7;
+       Y[3]:= 48;
+}
 	//unittype randomisation
 	//making a group fixed as ranged
 	e:= 0+(States.KamRandomI(3));
@@ -51,6 +61,16 @@ begin
 		begin
 			//bot
 			//Fixed ranged group
+			Actions.GiveGroup(P,a,X[P],(Y[P]+4),4,16,4);
+			//left
+			Actions.GiveGroup(P,b,(X[P]-4),Y[P]+1,4,16,4);
+			//right
+			Actions.GiveGroup(P,c,(X[P]+5),(Y[P]-2),0,16,4);
+			//top
+			Actions.GiveGroup(P,d,X[P]+1,(Y[P]-4),0,16,4);
+			{
+			// VALUES for Frozen Fight map
+			//bot
 			Actions.GiveGroup(P,a,X[P],(Y[P]+4),4,12,3);
 			//left
 			Actions.GiveGroup(P,b,(X[P]-3),Y[P]+1,4,12,3);
@@ -58,11 +78,12 @@ begin
 			Actions.GiveGroup(P,c,(X[P]+3),(Y[P]-1),0,12,3);
 			//top
 			Actions.GiveGroup(P,d,X[P],(Y[P]-4),0,12,3);
+			}
 		end;
 end;
 
 
-{
+{	
 	water 193
 	ice: 44
 	ice -> water: 12 even, 23 corner, 22 big corner
@@ -88,8 +109,8 @@ begin
 			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := 4;
 			
 			// grassy desert
-			26, 27: result := 242;
-			75, 76, 77 : result := 4;
+			26, 27, 28, 29, 30: result := 242;
+			75, 76, 77, 78, 79, 80, 81, 82, 83 : result := 242;
 			// 241 gd-w corner
 			// 242 gd-w 50% 
 			// 243 gd-w reverse corner (xD)
@@ -114,8 +135,8 @@ begin
 			45, 46, 203, 204, 205, 47, 220, 212, 213 : result := -1;
 			
 			// grassy desert
-			26, 27: result := 242;
-			75, 76, 77 : result := -1;
+			26, 27, 28, 29, 30: result := 242;
+			75, 76, 77, 78, 79, 80, 81, 82, 83 : result := 242;
 			// 241 gd-w corner
 			// 242 gd-w 50% 
 			// 243 gd-w reverse corner (xD)
